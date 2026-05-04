@@ -1,0 +1,7 @@
+Flask
+gunicorn
+reportlab
+numpy
+pandas
+scikit-learn
+qrcode[pil]

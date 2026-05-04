@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern Performance Predictor - {{ course_name }} | Internship Details</title>
+
+    <!-- Professional CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+
+    <style>
+        .course-wrapper {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        /* HEADER */
+        .course-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .course-icon {
+            font-size: 48px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+        }
+
+        /* GRID */
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .course-card {
+            background: #ffffff;
+            padding: 22px;
+            border-radius: 14px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        }
+
+        .course-card h3 {
+            margin-bottom: 10px;
+        }
+
+        /* MODULES */
+        .modules-section {
+            margin-bottom: 40px;
+        }
+
+        .modules-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .module {
+            background: #f3f4f6;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* ACTIONS */
+        .course-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            padding: 12px 22px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-secondary {
+            background: #10b981;
+            color: white;
+            padding: 12px 22px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-outline {
+            border: 2px solid #2563eb;
+            color: #2563eb;
+            padding: 12px 22px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary:hover {
+            background: #059669;
+        }
+
+        .btn-outline:hover {
+            background: #2563eb;
+            color: white;
+        }
+    </style>
+
+</head>
+
+<body data-role="{{ session.get('role', 'intern') }}">
+
+    <!-- Preloader for a smoother loading experience -->
+    <div class="preloader">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="header">
+        <div class="container">
+            <div class="flex">
+                <span class="header-brand">Performance Panel</span>
+                <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <nav class="nav-links" id="navLinks">
+                    {% if session.logged_in %}
+                    {% if session.role == 'admin' %}
+                    <a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('admin.student_list') }}">Students</a>
+                    <a href="{{ url_for('admin.add_courses') }}">Internships</a>
+                    <a href="{{ url_for('admin.add_task') }}">Assign Task</a>
+                    <a href="{{ url_for('admin.admin_complete_tasks') }}">Complete Tasks</a>
+                    <a href="{{ url_for('admin.attendance') }}">Attendance</a>
+                    <a href="{{ url_for('admin.admin_performance_overview') }}">Performance</a>
+                    <a href="{{ url_for('admin.admin_leave_requests') }}">Leave Requests</a>
+                    {% elif session.role == 'intern' %}
+                    <a href="{{ url_for('intern.intern_dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('intern.intern_tasks') }}">Tasks</a>
+                    <a href="{{ url_for('intern.intern_attendance') }}">Attendance</a>
+                    <a href="{{ url_for('intern.intern_courses') }}">Internships</a>
+                    <a href="{{ url_for('intern.intern_performance') }}">Performance</a>
+                    <a href="{{ url_for('intern.intern_profile') }}">Profile</a>
+                    {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+
+            <div class="course-wrapper">
+
+                <!-- ===== COURSE HEADER ===== -->
+                <div class="course-header">
+                    <div class="course-icon">🎓</div>
+                    <div>
+                        <h1>{{ course_name }} Internship</h1>
+                        <p class="subtitle">
+                            Kickstart your professional journey with our {{ course_name }} program.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ===== COURSE INFO GRID ===== -->
+                <div class="course-grid">
+
+                    <div class="course-card">
+                        <h3>🏢 Program Overview</h3>
+                        <p>
+                            Our <strong>{{ course_name }}</strong> internship provides hands-on experience
+                            working with real-world projects and professional mentorship.
+                        </p>
+                    </div>
+
+                    <div class="course-card">
+                        <h3>⏱ Duration</h3>
+                        <p>4 – 6 Weeks</p>
+                    </div>
+
+                    <div class="course-card">
+                        <h3>🎯 Skill Level</h3>
+                        <p>Beginner → Intermediate</p>
+                    </div>
+
+                    <div class="course-card">
+                        <h3>🏆 Benefits</h3>
+                        <ul>
+                            <li>Improve practical knowledge</li>
+                            <li>Boost performance score</li>
+                            <li>Industry-ready skills</li>
+                            <li>Better task completion</li>
+                        </ul>
+                    </div>
+
+                </div>
+
+                <!-- ===== PROGRAM STRUCTURE ===== -->
+                <div class="modules-section">
+                    <h2>🛠 Internship Curriculum</h2>
+
+                    <div class="modules-list">
+                        <div class="module">Introduction & Basics</div>
+                        <div class="module">Core Concepts</div>
+                        <div class="module">Hands-on Practice</div>
+                        <div class="module">Mini Project</div>
+                        <div class="module">Final Assessment</div>
+                    </div>
+                </div>
+
+                <!-- ===== ACTION BUTTONS ===== -->
+                <div class="course-actions">
+                    <form action="{{ url_for('intern.register_internship', course_name=course_name) }}" method="POST"
+                        class="replace-history">
+                        <button type="submit" class="btn-primary">🚪 Register for Internship</button>
+                    </form>
+                    <button class="btn-secondary">⭐ Interested</button>
+                    <a href="{{ url_for('intern.intern_courses') }}" class="btn-outline">
+                        ⬅ Back to Internships
+                    </a>
+                </div>
+
+            </div>
+
+
+        </div>
+    </main>
+
+    <!-- Advanced Footer with animated background and links -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="{{ url_for('auth.index') }}">Home</a>
+                <a href="{{ url_for('auth.about') }}">About</a>
+                <a href="{{ url_for('auth.contact') }}">Contact</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+            <p>&copy; 2026 Intern Student Performance Predictor. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Floating Action Buttons for quick access to common actions -->
+    <div class="fab-container">
+        <!-- Scroll to Top Button -->
+        <a href="#" class="fab fab-scroll-top" id="scrollTopBtn" title="Scroll to Top">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+        </a>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Preloader Logic ---
+            const preloader = document.querySelector('.preloader');
+            if (preloader) {
+                window.addEventListener('load', () => {
+                    preloader.classList.add('fade-out');
+                });
+            }
+
+            // --- Scroll-to-top Button Logic ---
+            const scrollTopBtn = document.getElementById('scrollTopBtn');
+            if (scrollTopBtn) {
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 200) {
+                        scrollTopBtn.classList.add('show');
+                    } else {
+                        scrollTopBtn.classList.remove('show');
+                    }
+                });
+                scrollTopBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+
+            // --- Mobile nav toggle ---
+            const navToggle = document.getElementById('navToggle');
+            const navLinks = document.getElementById('navLinks');
+            if (navToggle && navLinks) {
+                navToggle.addEventListener('click', () => navLinks.classList.toggle('is-open'));
+            }
+        });
+    </script>
+</body>
+
+</html>

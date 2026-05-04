@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern Performance Predictor - Complete Tasks</title>
+
+    <!-- Professional CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+
+    <style>
+        .mark-input {
+            width: 80px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .empty {
+            text-align: center;
+            color: #6b7280;
+            padding: 30px;
+        }
+    </style>
+
+</head>
+
+<body data-role="{{ session.get('role', 'intern') }}">
+
+    <!-- Preloader for a smoother loading experience -->
+    <div class="preloader">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="header">
+        <div class="container">
+            <div class="flex">
+                <span class="header-brand">Performance Panel</span>
+                <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <nav class="nav-links" id="navLinks">
+                    {% if session.logged_in %}
+                    {% if session.role == 'admin' %}
+                    <a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('admin.student_list') }}">Students</a>
+                    <a href="{{ url_for('admin.add_courses') }}">Internships</a>
+                    <a href="{{ url_for('admin.add_task') }}">Assign Task</a>
+                    <a href="{{ url_for('admin.admin_complete_tasks') }}">Complete Tasks</a>
+                    <a href="{{ url_for('admin.attendance') }}">Attendance</a>
+                    <a href="{{ url_for('admin.admin_performance_overview') }}">Performance</a>
+                    <a href="{{ url_for('admin.admin_leave_requests') }}">Leave Requests</a>
+                    {% elif session.role == 'intern' %}
+                    <a href="{{ url_for('intern.intern_dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('intern.intern_tasks') }}">Tasks</a>
+                    <a href="{{ url_for('intern.intern_attendance') }}">Attendance</a>
+                    <a href="{{ url_for('intern.intern_courses') }}">Internships</a>
+                    <a href="{{ url_for('intern.intern_performance') }}">Performance</a>
+                    <a href="{{ url_for('intern.intern_profile') }}">Profile</a>
+                    {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+
+            <div class="page-header">
+                <h2 class="page-title">Complete Pending Tasks</h2>
+                <p class="subtitle">Review intern work and assign marks before final submission.</p>
+            </div>
+
+            <div class="card">
+                {% if pending_tasks %}
+                <form method="POST" action="{{ url_for('admin.admin_complete_tasks') }}" class="replace-history">
+                    <div class="table-wrapper">
+                        <table class="clean-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Task</th>
+                                    <th>Description</th>
+                                    <th>Submission</th>
+                                    <th>Status</th>
+                                    <th>Mark</th>
+                                    <th>Completed</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in pending_tasks %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ task[4] }}</strong>
+                                    </td>
+                                    <td>{{ task[1] }}</td>
+                                    <td>{{ task[2] }}</td>
+                                    <td>
+                                        {% if task[6] %}
+                                        <div class="submission-box">
+                                            {{ task[6] }}
+                                            <br>
+                                            <small class="muted">at {{ task[7] }}</small>
+                                        </div>
+                                        {% else %}
+                                        <span class="muted">Not submitted</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if task[8] == 'submitted' %}
+                                        <span class="status submitted">Submitted</span>
+                                        {% else %}
+                                        <span class="status pending">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <input type="number" name="mark_{{ task[0] }}" min="0" max="100" value="0"
+                                            class="mark-input">
+                                    </td>
+                                    <td>
+                                        <input type="checkbox" name="completed_task_{{ task[0] }}" class="checkbox">
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 8px;">
+                                            <a href="{{ url_for('admin.edit_task', task_id=task[0]) }}"
+                                                class="btn-icon edit" title="Edit">✏️</a>
+                                            <form action="{{ url_for('admin.delete_task', task_id=task[0]) }}"
+                                                method="POST" class="replace-history"
+                                                onsubmit="return confirm('Are you sure you want to delete this task?');"
+                                                style="display:inline;">
+                                                <button type="submit" class="btn-icon delete"
+                                                    title="Delete">🗑️</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="action-bar">
+                        <button type="submit" class="btn btn-primary">Update Selected Tasks</button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="empty">No pending tasks right now.</div>
+                {% endif %}
+            </div>
+
+            <style>
+                .btn-icon {
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 16px;
+                    padding: 4px;
+                    transition: transform 0.2s;
+                    text-decoration: none;
+                    display: inline-block;
+                }
+
+                .btn-icon:hover {
+                    transform: scale(1.2);
+                }
+            </style>
+        </div>
+    </main>
+
+    <!-- Advanced Footer with animated background and links -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="{{ url_for('auth.index') }}">Home</a>
+                <a href="{{ url_for('auth.about') }}">About</a>
+                <a href="{{ url_for('auth.contact') }}">Contact</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+            <p>&copy; 2026 Intern Student Performance Predictor. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Floating Action Buttons for quick access to common actions -->
+    <div class="fab-container">
+        <!-- Scroll to Top Button -->
+        <a href="#" class="fab fab-scroll-top" id="scrollTopBtn" title="Scroll to Top">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+        </a>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Preloader Logic ---
+            const preloader = document.querySelector('.preloader');
+            if (preloader) {
+                window.addEventListener('load', () => {
+                    preloader.classList.add('fade-out');
+                });
+            }
+
+            // --- Scroll-to-top Button Logic ---
+            const scrollTopBtn = document.getElementById('scrollTopBtn');
+            if (scrollTopBtn) {
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 200) {
+                        scrollTopBtn.classList.add('show');
+                    } else {
+                        scrollTopBtn.classList.remove('show');
+                    }
+                });
+                scrollTopBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+
+            // --- Mobile nav toggle ---
+            const navToggle = document.getElementById('navToggle');
+            const navLinks = document.getElementById('navLinks');
+            if (navToggle && navLinks) {
+                navToggle.addEventListener('click', () => navLinks.classList.toggle('is-open'));
+            }
+        });
+    </script>
+</body>
+
+</html>

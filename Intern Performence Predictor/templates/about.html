@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}About Us{% endblock %}
+
+{% block extra_css %}
+<style>
+    .about-header {
+        text-align: center;
+        padding: 60px 20px;
+        background: linear-gradient(135deg, #eff6ff, #f3e8ff);
+        border-radius: 24px;
+        margin-bottom: 40px;
+        border: 1px solid #e5e7eb;
+    }
+    .about-title {
+        font-size: 42px;
+        font-weight: 800;
+        margin-bottom: 16px;
+        background: linear-gradient(to right, #2563eb, #7c3aed);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .about-subtitle {
+        font-size: 18px;
+        color: #4b5563;
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+    .mission-vision-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 32px;
+        margin-bottom: 60px;
+    }
+    .mv-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 40px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .mv-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        border-color: #93c5fd;
+    }
+    .mv-icon {
+        width: 50px;
+        height: 50px;
+        background: #eff6ff;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        color: #2563eb;
+    }
+    .mv-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #111827;
+    }
+    .mv-text {
+        font-size: 15px;
+        color: #4b5563;
+        line-height: 1.7;
+    }
+    .platform-features {
+        background: #ffffff;
+        border-radius: 24px;
+        padding: 50px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .pf-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 24px;
+        text-align: center;
+        color: #111827;
+    }
+    .pf-text {
+        font-size: 16px;
+        color: #4b5563;
+        line-height: 1.8;
+        text-align: center;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="about-container">
+    <div class="about-header">
+        <h1 class="about-title">Empowering the Next Generation of Talent</h1>
+        <p class="about-subtitle">
+            The Interns Performance Predictor is an advanced, data-driven platform designed to bridge the gap between academic learning and professional excellence.
+        </p>
+    </div>
+
+    <div class="mission-vision-grid">
+        <!-- Mission Card -->
+        <div class="mv-card">
+            <div class="mv-icon">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <h2 class="mv-title">Our Mission</h2>
+            <p class="mv-text">
+                To provide a seamless, transparent, and highly effective ecosystem where organizations can accurately track, evaluate, and predict the performance of their interns. We strive to replace subjective evaluations with concrete, data-backed insights, ensuring that every intern receives fair assessment and constructive feedback to fuel their career growth.
+            </p>
+        </div>
+
+        <!-- Vision Card -->
+        <div class="mv-card">
+            <div class="mv-icon">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+            </div>
+            <h2 class="mv-title">Our Vision</h2>
+            <p class="mv-text">
+                We envision a future where predictive analytics and machine learning redefine talent acquisition and development. By continuously analyzing task completion, attendance records, and behavioral metrics, we aim to become the global standard platform that predicts an intern's full-time success potential, ultimately shaping the workforce of tomorrow.
+            </p>
+        </div>
+    </div>
+
+    <div class="platform-features">
+        <h2 class="pf-title">What We Do</h2>
+        <p class="pf-text">
+            The Interns Performance Predictor centralizes all aspects of internship management. From daily task assignment and rigorous progress tracking to behavior monitoring and attendance logging, our platform offers administrators a bird's-eye view of team performance. Interns benefit from a structured environment where expectations are clear, feedback is continuous, and their hard work is visibly quantified on their personal dashboard.
+        </p>
+    </div>
+</div>
+{% endblock %}

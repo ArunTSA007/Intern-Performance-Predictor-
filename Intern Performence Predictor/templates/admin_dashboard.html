@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern Performance Predictor - Admin Dashboard</title>
+
+    <!-- Professional CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+
+    <style>
+        /* ===== HEADER ===== */
+        .admin-header h2 {
+            font-size: 32px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 25px;
+        }
+
+        /* ===== GRID ===== */
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        /* ===== CARDS ===== */
+        .admin-card {
+            text-decoration: none;
+            color: white;
+            padding: 22px;
+            border-radius: 18px;
+            text-align: center;
+            font-weight: 700;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            transition: 0.3s;
+        }
+
+        .admin-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+        }
+
+        .admin-card .icon {
+            font-size: 34px;
+            margin-bottom: 10px;
+        }
+
+        /* ===== GRADIENT COLORS ===== */
+        .gradient-cyan {
+            background: linear-gradient(135deg, #06b6d4, #22d3ee);
+        }
+
+        .gradient-purple {
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+        }
+
+        .gradient-green {
+            background: linear-gradient(135deg, #16a34a, #4ade80);
+        }
+
+        .gradient-red {
+            background: linear-gradient(135deg, #dc2626, #f87171);
+        }
+
+        .gradient-orange {
+            background: linear-gradient(135deg, #f97316, #fb923c);
+        }
+
+        .gradient-blue {
+            background: linear-gradient(135deg, #2563eb, #60a5fa);
+        }
+
+        .gradient-yellow {
+            background: linear-gradient(135deg, #facc15, #fde047);
+        }
+
+        .gradient-indigo {
+            background: linear-gradient(135deg, #4f46e5, #818cf8);
+        }
+
+        .gradient-pink {
+            background: linear-gradient(135deg, #ec4899, #f9a8d4);
+        }
+
+        .gradient-teal {
+            background: linear-gradient(135deg, #14b8a6, #5eead4);
+        }
+
+        .gradient-gray {
+            background: linear-gradient(135deg, #64748b, #94a3b8);
+        }
+
+        .gradient-brown {
+            background: linear-gradient(135deg, #78350f, #a16207);
+        }
+    </style>
+
+</head>
+
+<body data-role="{{ session.get('role', 'intern') }}">
+
+    <!-- Preloader for a smoother loading experience -->
+    <div class="preloader">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="header">
+        <div class="container">
+            <div class="flex">
+                <span class="header-brand">Performance Panel</span>
+                <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <nav class="nav-links" id="navLinks">
+                    {% if session.user_id %}
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+
+            <div class="admin-header">
+                <h2>👑 Welcome <span>{{ username|title }}</span></h2>
+                <p class="subtitle">Intern Performance Management Panel</p>
+            </div>
+
+            <!-- Admin Reminder Notification Toast -->
+            {% if unassigned_interns_count > 0 or show_behaviour_reminder %}
+            <div id="adminReminderToasts" class="toast-container" style="display: none;">
+                {% if unassigned_interns_count > 0 %}
+                <div class="toast-notification task-toast">
+                    <div class="toast-icon-wrapper">⏳</div>
+                    <div class="toast-content">
+                        <h4 class="toast-title">Task Assignment Time!</h4>
+                        <p class="toast-message">Please assign new tasks to all {{ unassigned_interns_count }} unassigned interns.</p>
+                    </div>
+                    <button class="toast-close" aria-label="Close reminder">&times;</button>
+                </div>
+                {% endif %}
+                
+                {% if show_behaviour_reminder %}
+                <div class="toast-notification behaviour-toast">
+                    <div class="toast-icon-wrapper">⭐</div>
+                    <div class="toast-content">
+                        <h4 class="toast-title">Behaviour Ratings Due!</h4>
+                        <p class="toast-message">Please remember to provide behaviour ratings for your interns today.</p>
+                    </div>
+                    <button class="toast-close" aria-label="Close reminder">&times;</button>
+                </div>
+                {% endif %}
+            </div>
+
+            <style>
+            .toast-container {
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                width: max-content;
+                max-width: 90vw;
+            }
+            .toast-notification {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+                display: flex;
+                align-items: center;
+                padding: 16px 20px;
+                min-width: 400px;
+                position: relative;
+                overflow: hidden;
+                animation: slideDownToast 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+            .toast-notification.task-toast {
+                border-left: 6px solid #6366f1;
+            }
+            .toast-notification.behaviour-toast {
+                border-left: 6px solid #10b981;
+            }
+            .toast-icon-wrapper {
+                background: #f3f4f6;
+                height: 40px;
+                width: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                margin-right: 15px;
+                flex-shrink: 0;
+            }
+            .toast-content {
+                flex-grow: 1;
+            }
+            .toast-title {
+                margin: 0 0 4px 0;
+                color: #1f2937;
+                font-size: 15px;
+                font-weight: 700;
+            }
+            .toast-message {
+                margin: 0;
+                color: #6b7280;
+                font-size: 13px;
+            }
+            .toast-close {
+                background: none;
+                border: none;
+                color: #9ca3af;
+                font-size: 22px;
+                cursor: pointer;
+                padding: 0 5px;
+                margin-left: 15px;
+                transition: color 0.2s;
+            }
+            .toast-close:hover {
+                color: #ef4444;
+            }
+            @keyframes slideDownToast {
+                from { transform: translateY(-50px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            </style>
+
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const toastContainer = document.getElementById('adminReminderToasts');
+                
+                if (toastContainer) {
+                    toastContainer.style.display = 'flex';
+                    
+                    // Auto-hide the entire notification container (both task and behavior ratings) after 15 seconds
+                    setTimeout(() => {
+                        toastContainer.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                        toastContainer.style.opacity = '0';
+                        toastContainer.style.transform = 'translate(-50%, -20px)';
+                        setTimeout(() => {
+                            toastContainer.style.display = 'none';
+                        }, 500);
+                    }, 15000);
+                    
+                    const closeBtns = document.querySelectorAll('.toast-close');
+                    closeBtns.forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const toast = this.closest('.toast-notification');
+                            toast.style.display = 'none';
+                            
+                            // Check if all toasts are dismissed to hide the container completely
+                            const visibleToasts = Array.from(document.querySelectorAll('.toast-notification'))
+                                .filter(t => t.style.display !== 'none');
+                                
+                            if (visibleToasts.length === 0) {
+                                toastContainer.style.display = 'none';
+                            }
+                        });
+                    });
+                }
+            });
+            </script>
+            {% endif %}
+
+            <div class="admin-grid">
+
+                <a href="{{ url_for('admin.add_student') }}" class="admin-card gradient-cyan">
+                    <div class="icon">➕</div>
+                    <h3>Add Intern</h3>
+                    <p>Enroll new student</p>
+                </a>
+
+                <a href="{{ url_for('admin.student_list') }}" class="admin-card gradient-purple">
+                    <div class="icon">👨‍🎓</div>
+                    <h3>Total Interns</h3>
+                    <p>{{ total_students }} Registered</p>
+                </a>
+
+                <a href="{{ url_for('admin.attendance') }}" class="admin-card gradient-green">
+                    <div class="icon">✅</div>
+                    <h3>Attendance</h3>
+                    <p>Mark & View</p>
+                </a>
+
+                <a href="{{ url_for('admin.pending_tasks') }}" class="admin-card gradient-red">
+                    <div class="icon">⏳</div>
+                    <h3>Pending Tasks</h3>
+                    <p>{{ pending_tasks }} Interns Working</p>
+                </a>
+
+                <a href="{{ url_for('admin.admin_performance_overview') }}" class="admin-card gradient-orange">
+                    <div class="icon">📈</div>
+                    <h3>Performance</h3>
+                    <p>Overall Analysis</p>
+                </a>
+
+                <a href="{{ url_for('admin.add_courses') }}" class="admin-card gradient-blue">
+                    <div class="icon">🚀</div>
+                    <h3>Internships</h3>
+                    <p>Manage Programs</p>
+                </a>
+
+                <a href="{{ url_for('admin.add_task') }}" class="admin-card gradient-yellow">
+                    <div class="icon">📝</div>
+                    <h3>Assign Tasks</h3>
+                    <p>Create New</p>
+                </a>
+
+                <a href="{{ url_for('admin.admin_complete_tasks') }}" class="admin-card gradient-indigo">
+                    <div class="icon">🔍</div>
+                    <h3>Review Tasks</h3>
+                    <p>{{ submitted_tasks }} Needs Grading</p>
+                </a>
+
+                <a href="{{ url_for('admin.completed_tasks_list') }}" class="admin-card gradient-cyan">
+                    <div class="icon">✔️</div>
+                    <h3>Completed Tasks</h3>
+                    <p>{{ completed_tasks }} Fully Evaluated</p>
+                </a>
+
+                <a href="{{ url_for('admin.add_feedback') }}" class="admin-card gradient-pink">
+                    <div class="icon">💬</div>
+                    <h3>Feedback</h3>
+                    <p>Intern Reviews</p>
+                </a>
+
+                <a href="{{ url_for('admin.add_behaviour_rating') }}" class="admin-card gradient-teal">
+                    <div class="icon">⭐</div>
+                    <h3>Behaviour</h3>
+                    <p>Rate Interns</p>
+                </a>
+
+                <a href="{{ url_for('admin.admin_view_student_feedback') }}" class="admin-card gradient-gray">
+                    <div class="icon">✉️</div>
+                    <h3>Interns Messages</h3>
+                    <p>View Feedback</p>
+                </a>
+
+                <a href="{{ url_for('admin.internship_registrations') }}" class="admin-card gradient-cyan">
+                    <div class="icon">🔔</div>
+                    <h3>Registrations</h3>
+                    <p>{{ pending_registrations }} New Applications</p>
+                </a>
+
+                <a href="{{ url_for('admin.admin_leave_requests') }}" class="admin-card gradient-brown">
+                    <div class="icon">✈️</div>
+                    <h3>Leave Requests</h3>
+                    <p>Approve / Reject</p>
+                </a>
+
+            </div>
+
+
+        </div>
+    </main>
+
+    <!-- Advanced Footer with animated background and links -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="{{ url_for('auth.index') }}">Home</a>
+                <a href="{{ url_for('auth.about') }}">About</a>
+                <a href="{{ url_for('auth.contact') }}">Contact</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+            <p>&copy; 2026 Intern Student Performance Predictor. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Floating Action Buttons for quick access to common actions -->
+    <div class="fab-container">
+        <!-- Scroll to Top Button -->
+        <a href="#" class="fab fab-scroll-top" id="scrollTopBtn" title="Scroll to Top">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+        </a>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Preloader Logic ---
+            const preloader = document.querySelector('.preloader');
+            if (preloader) {
+                window.addEventListener('load', () => {
+                    preloader.classList.add('fade-out');
+                });
+            }
+
+            // --- Scroll-to-top Button Logic ---
+            const scrollTopBtn = document.getElementById('scrollTopBtn');
+            if (scrollTopBtn) {
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 200) {
+                        scrollTopBtn.classList.add('show');
+                    } else {
+                        scrollTopBtn.classList.remove('show');
+                    }
+                });
+                scrollTopBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+
+            // --- Mobile nav toggle ---
+            const navToggle = document.getElementById('navToggle');
+            const navLinks = document.getElementById('navLinks');
+            if (navToggle && navLinks) {
+                navToggle.addEventListener('click', () => navLinks.classList.toggle('is-open'));
+            }
+        });
+    </script>
+</body>
+
+</html>

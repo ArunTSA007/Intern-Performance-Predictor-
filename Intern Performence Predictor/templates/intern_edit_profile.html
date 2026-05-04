@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern Performance Predictor - Edit Profile</title>
+    <!-- Professional CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+
+        .alert-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body data-role="{{ session.get('role', 'intern') }}">
+    <div class="preloader">
+        <div class="spinner"></div>
+    </div>
+    <header class="header">
+        <div class="container">
+            <div class="flex">
+                <span class="header-brand">Performance Panel</span>
+                <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <nav class="nav-links" id="navLinks">
+                    {% if session.logged_in %}
+                    <a href="{{ url_for('intern.intern_dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('intern.intern_tasks') }}">Tasks</a>
+                    <a href="{{ url_for('intern.intern_attendance') }}">Attendance</a>
+                    <a href="{{ url_for('intern.intern_courses') }}">Internships</a>
+                    <a href="{{ url_for('intern.intern_performance') }}">Performance</a>
+                    <a href="{{ url_for('intern.intern_profile') }}">Profile</a>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </header>
+    <main class="main-content">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <div class="page-header" style="text-align: center;">
+                <h2 class="page-title">Edit Your Profile</h2>
+                <p class="subtitle">Submit changes for admin approval</p>
+            </div>
+
+            <div class="alert-info" style="max-width: 800px; margin: 0 auto 20px auto;">
+                <strong>Note:</strong> Changes will not be reflected immediately. They must be approved by an
+                administrator.
+            </div>
+
+            <form method="POST" class="card replace-history" enctype="multipart/form-data">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+
+                    <div class="form-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 20px;">
+                        <div
+                            style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; background-color: #f3f4f6; border: 2px solid #e5e7eb; display: flex; align-items: center; justify-content: center;">
+                            {% if student.profile_pic %}
+                            <img src="{{ url_for('static', filename='uploads/' + student.profile_pic) }}" alt="Profile"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                            <span style="font-size: 32px; color: #9ca3af;">{{ student.name[0] }}</span>
+                            {% endif %}
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="form-label">Change Profile Picture</label>
+                            <input type="file" name="profile_pic" accept="image/*" class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="name" value="{{ student.name }}" required class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Address (Login ID)</label>
+                        <input type="email" name="email" value="{{ student.email }}" required class="form-input"
+                            readonly title="Email cannot be changed directly as it is your Login ID. Contact Admin.">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" name="phone_number" value="{{ student.phone_number }}" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" name="dob" value="{{ student.dob }}" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select name="gender" class="form-input">
+                            <option value="">Select Gender</option>
+                            <option value="Male" {% if student.gender=='Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if student.gender=='Female' %}selected{% endif %}>Female</option>
+                            <option value="Other" {% if student.gender=='Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" rows="2" class="form-input">{{ student.address }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">LinkedIn URL</label>
+                        <input type="url" name="linkedin_url" value="{{ student.linkedin_url }}" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">GitHub URL</label>
+                        <input type="url" name="github_url" value="{{ student.github_url }}" class="form-input">
+                    </div>
+
+                </div>
+
+                <div class="form-actions" style="margin-top: 25px; text-align: right;">
+                    <a href="{{ url_for('intern.intern_profile') }}" class="btn btn-secondary"
+                        style="margin-right: 10px;">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Submit for Approval</button>
+                </div>
+
+            </form>
+        </div>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Intern Student Performance Predictor. All rights reserved.</p>
+        </div>
+    </footer>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const preloader = document.querySelector('.preloader');
+            if (preloader) {
+                window.addEventListener('load', () => {
+                    preloader.classList.add('fade-out');
+                });
+            }
+            const navToggle = document.getElementById('navToggle');
+            const navLinks = document.getElementById('navLinks');
+            if (navToggle && navLinks) {
+                navToggle.addEventListener('click', () => navLinks.classList.toggle('is-open'));
+            }
+        });
+    </script>
+</body>
+
+</html>

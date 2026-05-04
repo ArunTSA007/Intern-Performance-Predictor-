@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Login • Intern Performance Suite</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Premium animated login styling (only affects this page) -->
+    <style>
+        body.login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+            background: radial-gradient(circle at top left, #1d4ed8 0, #0f172a 40%, #020617 100%);
+            background-size: 180% 180%;
+            animation: loginGradientMove 18s ease infinite;
+            color: #e5e7eb;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        /* Soft animated blobs in the background */
+        .login-blob {
+            position: absolute;
+            border-radius: 999px;
+            filter: blur(30px);
+            opacity: 0.55;
+            mix-blend-mode: screen;
+            pointer-events: none;
+        }
+
+        .login-blob.blob-1 {
+            width: 340px;
+            height: 340px;
+            background: #4f46e5;
+            top: -80px;
+            right: -60px;
+            animation: floatBlob1 22s ease-in-out infinite alternate;
+        }
+
+        .login-blob.blob-2 {
+            width: 260px;
+            height: 260px;
+            background: #22c55e;
+            bottom: -80px;
+            left: -40px;
+            animation: floatBlob2 26s ease-in-out infinite alternate;
+        }
+
+        .login-shell {
+            width: 100%;
+            max-width: 1150px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 36px;
+            align-items: stretch;
+        }
+
+        .login-brand-panel {
+            backdrop-filter: blur(24px);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.90), rgba(15, 23, 42, 0.80));
+            border-radius: 24px;
+            padding: 40px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            box-shadow: 0 30px 80px rgba(15, 23, 42, 0.75);
+            color: #e5e7eb;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-brand-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(15, 118, 110, 0.16);
+            color: #a5f3fc;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.11em;
+            margin-bottom: 24px;
+        }
+
+        .login-brand-pill-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: #22c55e;
+            box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.22);
+        }
+
+        .login-brand-title {
+            font-size: 38px;
+            line-height: 1.25;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            margin-bottom: 14px;
+        }
+
+        .login-brand-subtitle {
+            font-size: 16px;
+            color: #9ca3af;
+            max-width: 400px;
+        }
+
+        .login-brand-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin-top: 28px;
+        }
+
+        .login-metric {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .login-metric-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #6b7280;
+            letter-spacing: 0.16em;
+        }
+
+        .login-metric-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .login-metric-value span {
+            font-size: 11px;
+            font-weight: 500;
+            color: #4ade80;
+            margin-left: 4px;
+        }
+
+        .login-orb {
+            position: absolute;
+            right: 18px;
+            bottom: 18px;
+            width: 84px;
+            height: 84px;
+            border-radius: 28px;
+            background: radial-gradient(circle at 30% 30%, #4ade80 0, #22c55e 26%, #22d3ee 60%, #0f172a 100%);
+            box-shadow:
+                0 20px 40px rgba(16, 185, 129, 0.35),
+                0 0 0 1px rgba(15, 23, 42, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-orb-inner {
+            width: 52px;
+            height: 52px;
+            border-radius: 999px;
+            background: radial-gradient(circle at 30% 20%, #ecfeff 0, #0f172a 70%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-orb-icon {
+            width: 26px;
+            height: 26px;
+            stroke: #e5e7eb;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .login-card {
+            backdrop-filter: blur(26px);
+            background: linear-gradient(160deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.87));
+            border-radius: 24px;
+            padding: 40px;
+            border: 1px solid rgba(148, 163, 184, 0.38);
+            box-shadow:
+                0 22px 60px rgba(15, 23, 42, 0.9),
+                0 0 0 1px rgba(15, 23, 42, 0.9);
+            color: #e5e7eb;
+            position: relative;
+            overflow: hidden;
+            transform-origin: center;
+            animation: cardFloatIn 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 18px;
+            gap: 12px;
+        }
+
+        .login-card-title {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+
+        .login-card-subtitle {
+            font-size: 15px;
+            color: #9ca3af;
+            margin-top: 6px;
+        }
+
+        .login-tag {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(30, 64, 175, 0.45);
+            border: 1px solid rgba(129, 140, 248, 0.5);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #c7d2fe;
+        }
+
+        .login-role-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px;
+            border-radius: 999px;
+            background: rgba(9, 9, 11, 0.7);
+            border: 1px solid rgba(63, 63, 70, 0.9);
+            margin: 12px 0 18px;
+        }
+
+        .login-role-pill {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: #a1a1aa;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+        }
+
+        .login-role-pill span.dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+        }
+
+        .login-role-pill.admin span.dot {
+            background: #fbbf24;
+        }
+
+        .login-role-pill.intern span.dot {
+            background: #22c55e;
+        }
+
+        .login-role-pill.is-active-admin {
+            background: radial-gradient(circle at 0 0, rgba(251, 191, 36, 0.45), transparent 60%);
+            color: #fefce8;
+        }
+
+        .login-role-pill.is-active-intern {
+            background: radial-gradient(circle at 100% 0, rgba(34, 197, 94, 0.4), transparent 65%);
+            color: #ecfdf5;
+        }
+
+        .login-card .form-group {
+            margin-bottom: 18px;
+        }
+
+        .login-card .form-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: #e5e7eb;
+        }
+
+        .login-card .form-group label span.hint {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .login-card .form-group input,
+        .login-card .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(75, 85, 99, 0.85);
+            font-size: 15px;
+            background: rgba(15, 23, 42, 0.95);
+            color: #e5e7eb;
+            outline: none;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, transform 0.06s ease;
+        }
+
+        .login-card .form-group input::placeholder {
+            color: #6b7280;
+        }
+
+        .login-card .form-group input:focus,
+        .login-card .form-group select:focus {
+            border-color: #60a5fa;
+            box-shadow:
+                0 0 0 1px rgba(37, 99, 235, 0.5),
+                0 0 0 10px rgba(37, 99, 235, 0.12);
+            background: rgba(15, 23, 42, 0.98);
+            transform: translateY(-1px);
+        }
+
+        .login-helper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: -4px;
+            margin-bottom: 14px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .login-helper span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .login-helper-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: #22c55e;
+        }
+
+        .login-card button[type="submit"] {
+            width: 100%;
+            padding: 15px;
+            margin-top: 8px;
+            background: linear-gradient(120deg, #2563eb, #4f46e5);
+            color: #f9fafb;
+            border: none;
+            border-radius: 999px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                0 12px 30px rgba(37, 99, 235, 0.55),
+                0 0 0 1px rgba(15, 23, 42, 0.7);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: transform 0.12s ease, box-shadow 0.16s ease, filter 0.16s ease;
+        }
+
+        .login-card button[type="submit"]::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.22), transparent 55%);
+            opacity: 0;
+            transition: opacity 0.18s ease;
+        }
+
+        .login-card button[type="submit"]:hover {
+            transform: translateY(-1px);
+            box-shadow:
+                0 16px 38px rgba(37, 99, 235, 0.7),
+                0 0 0 1px rgba(191, 219, 254, 0.6);
+            filter: brightness(1.05);
+        }
+
+        .login-card button[type="submit"]:hover::before {
+            opacity: 1;
+        }
+
+        .login-card button[type="submit"] svg {
+            width: 17px;
+            height: 17px;
+        }
+
+        .login-footer {
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px dashed rgba(55, 65, 81, 0.85);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .login-footer span.strong {
+            font-weight: 600;
+            color: #e5e7eb;
+        }
+
+        .login-footer a {
+            color: #a5b4fc;
+            text-decoration: none;
+        }
+
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .login-card .flash-message {
+            padding: 11px 12px;
+            border-radius: 14px;
+            margin-bottom: 14px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid transparent;
+        }
+
+        .login-card .flash-error {
+            background: rgba(248, 113, 113, 0.12);
+            color: #fecaca;
+            border-color: rgba(248, 113, 113, 0.45);
+        }
+
+        .login-card .flash-success {
+            background: rgba(34, 197, 94, 0.12);
+            color: #bbf7d0;
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+
+        /* Animations */
+        @keyframes loginGradientMove {
+            0% {
+                background-position: 0% 0%;
+            }
+
+            50% {
+                background-position: 100% 80%;
+            }
+
+            100% {
+                background-position: 0% 0%;
+            }
+        }
+
+        @keyframes cardFloatIn {
+            0% {
+                opacity: 0;
+                transform: translateY(18px) scale(0.96);
+                filter: blur(4px);
+            }
+
+            55% {
+                opacity: 1;
+                transform: translateY(-4px) scale(1.01);
+                filter: blur(0);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0px) scale(1);
+            }
+        }
+
+        @keyframes floatBlob1 {
+            0% {
+                transform: translate3d(0, 0, 0) rotate(0deg);
+            }
+
+            100% {
+                transform: translate3d(-16px, 22px, 0) rotate(10deg);
+            }
+        }
+
+        @keyframes floatBlob2 {
+            0% {
+                transform: translate3d(0, 0, 0) rotate(0deg);
+            }
+
+            100% {
+                transform: translate3d(14px, -24px, 0) rotate(-8deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 880px) {
+            .login-layout {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .login-brand-panel {
+                display: none;
+            }
+
+            .login-card {
+                padding: 26px 22px 22px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            body.login-page {
+                padding: 22px 10px;
+            }
+
+            .login-card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+
+            .login-card-title {
+                font-size: 20px;
+            }
+
+            .login-footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body class="login-page">
+    <!-- animated ambient blobs -->
+    <div class="login-blob blob-1"></div>
+    <div class="login-blob blob-2"></div>
+
+    <div class="login-shell">
+        <div class="login-layout">
+            <aside class="login-brand-panel">
+                <div class="login-brand-pill">
+                    <span class="login-brand-pill-dot"></span>
+                    Real‑time Intern Performance
+                </div>
+                <h1 class="login-brand-title">Interns Performance Predictor</h1>
+                <p class="login-brand-subtitle">
+                    One secure place for admins and interns to manage tasks, attendance, and performance analytics.
+                </p>
+
+                <div style="margin-top: 40px; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); position: relative;">
+                    <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80" alt="Interns working on laptop" style="width: 100%; height: 300px; object-fit: cover; display: block; opacity: 0.85; transition: opacity 0.3s ease;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.85">
+                    <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(15,23,42,0.8), transparent 50%); pointer-events: none;"></div>
+                </div>
+
+
+            </aside>
+
+            <div class="login-wrapper">
+                <div class="login-card">
+                    <div class="login-card-header">
+                        <div>
+                            <div class="login-card-title">Sign in to continue</div>
+                            <p class="login-card-subtitle">
+                                Use your verified credentials to access the admin or intern dashboard.
+                            </p>
+                        </div>
+                        <span class="login-tag">Secure Workspace</span>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="{{ url_for('auth.login') }}">
+                        <div class="form-group">
+                            <label for="username">
+                                Email Address
+                                <span class="hint">Your registered email</span>
+                            </label>
+                            <input type="text" id="username" name="username" placeholder="name@example.com" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">
+                                Password
+                                <span class="hint">Minimum 8 characters</span>
+                            </label>
+                            <input type="password" id="password" name="password"
+                                placeholder="Enter your secure password" required>
+                        </div>
+
+                        <div class="login-helper">
+                            <span>
+                                <span class="login-helper-dot"></span>
+                                Encrypted enterprise‑grade session
+                            </span>
+                            <span>Need help? Contact your admin.</span>
+                        </div>
+
+                        <button type="submit">
+                            Continue
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M5 12H19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                                <path d="M12 5L19 12L12 19" stroke="currentColor" stroke-width="1.8"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </button>
+
+                        <div class="login-footer">
+                            <span>Signed in as <span class="strong">Admin or Intern</span> based on your selected
+                                role.</span>
+                            <span>By continuing, you agree to internal usage policies.</span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Optional: interactive effects specifically for login page can go here
+    </script>
+</body>
+
+</html>

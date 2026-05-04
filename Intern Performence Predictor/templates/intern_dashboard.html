@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern Performance Predictor - Intern Dashboard</title>
+
+    <!-- Professional CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+
+    <style>
+        /* ================= GLOBAL ================= */
+        .page-title {
+            font-size: 30px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 22px;
+        }
+
+        /* ================= STATS ================= */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 18px;
+            margin-bottom: 26px;
+        }
+
+        .stat-box {
+            padding: 20px;
+            border-radius: 16px;
+            color: white;
+            font-weight: 700;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .gradient-blue {
+            background: linear-gradient(135deg, #2563eb, #60a5fa);
+        }
+
+        .gradient-green {
+            background: linear-gradient(135deg, #16a34a, #4ade80);
+        }
+
+        /* ================= DASHBOARD ================= */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 20px;
+        }
+
+        .dash-card {
+            background: #ffffff;
+            padding: 22px;
+            border-radius: 18px;
+            text-align: center;
+            text-decoration: none;
+            color: #111827;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            transition: 0.3s;
+        }
+
+        .dash-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .dash-icon {
+            font-size: 34px;
+            background: #f3f4f6;
+            width: 60px;
+            height: 60px;
+            margin: auto;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .dash-card.danger {
+            border: 2px solid #fee2e2;
+        }
+
+        /* ================= CARD ================= */
+        .card {
+            background: #fff;
+            padding: 24px;
+            border-radius: 18px;
+            margin-top: 28px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        /* ================= TABLE ================= */
+        .clean-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .clean-table th {
+            background: #f8fafc;
+            padding: 12px;
+        }
+
+        .clean-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        /* ================= BADGE ================= */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        .badge.completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge.pending {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-complete-mini {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .btn-complete-mini:hover {
+            background: #059669;
+        }
+
+        /* ================= COURSES ================= */
+        .course-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+
+        .muted {
+            color: #6b7280;
+        }
+    </style>
+
+</head>
+
+<body data-role="{{ session.get('role', 'intern') }}">
+
+    <!-- Preloader for a smoother loading experience -->
+    <div class="preloader">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="header">
+        <div class="container">
+            <div class="flex">
+                <span class="header-brand">Performance Panel</span>
+                <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <nav class="nav-links" id="navLinks">
+                    {% if session.user_id %}
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+
+            <h2 class="page-title">👋 Welcome {{ student_profile_data.name|default(username)|title }}</h2>
+            <p class="subtitle"> Internship Progress</p>
+
+            <!-- ================= QUICK STATS ================= -->
+            <div class="stats-grid">
+                <div class="stat-box gradient-blue">
+                    <h4>Today's Attendance</h4>
+                    <p>{{ today_attendance_status|capitalize }}</p>
+                </div>
+                <div class="stat-box gradient-green">
+                    <h4>Overall Performance</h4>
+                    <p>{{ overall_score }}% <span>({{ predicted_performance }})</span></p>
+                </div>
+            </div>
+
+            <!-- ================= DASHBOARD CARDS ================= -->
+            <div class="dashboard-grid">
+
+                <a href="{{ url_for('intern.intern_tasks') }}" class="dash-card">
+                    <div class="dash-icon">📝</div>
+                    <h3>My Tasks</h3>
+                    <p>View assigned tasks</p>
+                </a>
+
+                <a href="{{ url_for('intern.intern_attendance') }}" class="dash-card">
+                    <div class="dash-icon">📅</div>
+                    <h3>Attendance</h3>
+                    <p>Daily attendance records</p>
+                </a>
+
+                <a href="{{ url_for('intern.intern_performance') }}" class="dash-card">
+                    <div class="dash-icon">📈</div>
+                    <h3>Performance</h3>
+                    <p>Score & analysis</p>
+                </a>
+
+                <a href="{{ url_for('intern.intern_feedback') }}" class="dash-card">
+                    <div class="dash-icon">💬</div>
+                    <h3>Admin Feedback</h3>
+                    <p>Read remarks</p>
+                </a>
+
+                <a href="{{ url_for('intern.intern_send_feedback') }}" class="dash-card">
+                    <div class="dash-icon">✉️</div>
+                    <h3>Send Feedback</h3>
+                    <p>Ask questions</p>
+                </a>
+
+                <a href="{{ url_for('intern.intern_courses') }}" class="dash-card">
+                    <div class="dash-icon">📚</div>
+                    <h3>Internships</h3>
+                    <p>Suggested internships</p>
+                </a>
+
+                <a href="{{ url_for('intern.intern_profile') }}" class="dash-card">
+                    <div class="dash-icon">👤</div>
+                    <h3>Profile</h3>
+                    <p>View details</p>
+                </a>
+
+                <a href="{{ url_for('intern.intern_leave_permission') }}" class="dash-card danger">
+                    <div class="dash-icon">✈️</div>
+                    <h3>Leave</h3>
+                    <p>Apply for leave</p>
+                </a>
+
+            </div>
+
+            <!-- ================= TASK TABLE ================= -->
+            <div class="card">
+                <h3>📌 Latest Tasks</h3>
+
+                {% if tasks %}
+                <table class="clean-table">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Mark</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                        <tr>
+                            <td>{{ task[0] }}</td>
+                            <td>{{ task[2] }}</td>
+                            <td>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <span class="badge {{ task[3]|lower }}">
+                                        {{ task[3]|capitalize }}
+                                    </span>
+                                    {% if task[3] == 'pending' %}
+                                    <form action="{{ url_for('intern.quick_task_completed', task_id=task[5]) }}" method="POST" class="replace-history" style="display:inline;">
+                                        <button type="submit" class="btn-complete-mini" title="Quick mark as completed">Complete</button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>{{ task[4] if task[4] else "N/A" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="muted">No tasks assigned yet.</p>
+                {% endif %}
+            </div>
+
+            <!-- ================= COURSES ================= -->
+            <div class="card">
+                <h3 class="section-title">🚀 Suggested Internships</h3>
+                <p class="section-subtitle">Recommended internship programs for you</p>
+                {% if suggested_internships %}
+                <ul class="course-list">
+                    {% for course in suggested_internships %}
+                    <li>📘 {{ course }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="muted">No internship suggestions yet.</p>
+                {% endif %}
+            </div>
+
+
+        </div>
+    </main>
+
+    <!-- Advanced Footer with animated background and links -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="{{ url_for('auth.index') }}">Home</a>
+                <a href="{{ url_for('auth.about') }}">About</a>
+                <a href="{{ url_for('auth.contact') }}">Contact</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+            <p>&copy; 2026 Intern Student Performance Predictor. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Floating Action Buttons for quick access to common actions -->
+    <div class="fab-container">
+        <!-- Scroll to Top Button -->
+        <a href="#" class="fab fab-scroll-top" id="scrollTopBtn" title="Scroll to Top">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+        </a>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Preloader Logic ---
+            const preloader = document.querySelector('.preloader');
+            if (preloader) {
+                window.addEventListener('load', () => {
+                    preloader.classList.add('fade-out');
+                });
+            }
+
+            // --- Scroll-to-top Button Logic ---
+            const scrollTopBtn = document.getElementById('scrollTopBtn');
+            if (scrollTopBtn) {
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 200) {
+                        scrollTopBtn.classList.add('show');
+                    } else {
+                        scrollTopBtn.classList.remove('show');
+                    }
+                });
+                scrollTopBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+
+            // --- Mobile nav toggle ---
+            const navToggle = document.getElementById('navToggle');
+            const navLinks = document.getElementById('navLinks');
+            if (navToggle && navLinks) {
+                navToggle.addEventListener('click', () => navLinks.classList.toggle('is-open'));
+            }
+        });
+    </script>
+</body>
+
+</html>

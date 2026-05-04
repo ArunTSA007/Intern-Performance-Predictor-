@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern Performance Predictor - Edit Student</title>
+
+    <!-- Professional CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+
+    <style>
+        /* TITLES */
+        .page-title {
+            font-size: 28px;
+            font-weight: 700
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 20px
+        }
+
+        /* STATS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #fff;
+            padding: 18px;
+            border-radius: 14px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, .08)
+        }
+
+        .stat-card.blue {
+            border-left: 5px solid #2563eb
+        }
+
+        .stat-card.green {
+            border-left: 5px solid #16a34a
+        }
+
+        .stat-card p {
+            font-size: 20px;
+            font-weight: 700
+        }
+
+        /* DASHBOARD */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px
+        }
+
+        .dash-card {
+            background: #fff;
+            padding: 22px;
+            border-radius: 18px;
+            text-align: center;
+            text-decoration: none;
+            color: #111;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+            transition: .3s
+        }
+
+        .dash-card span {
+            font-size: 30px
+        }
+
+        .dash-card p {
+            color: #6b7280;
+            font-size: 14px
+        }
+
+        .dash-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 14px 40px rgba(0, 0, 0, .15)
+        }
+
+        .dash-card.danger {
+            border: 2px solid #fee2e2
+        }
+    </style>
+
+</head>
+
+<body data-role="{{ session.get('role', 'intern') }}">
+
+    <!-- Preloader for a smoother loading experience -->
+    <div class="preloader">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="header">
+        <div class="container">
+            <div class="flex">
+                <span class="header-brand">Performance Panel</span>
+                <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <nav class="nav-links" id="navLinks">
+                    {% if session.logged_in %}
+                    {% if session.role == 'admin' %}
+                    <a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('admin.student_list') }}">Students</a>
+                    <a href="{{ url_for('admin.add_courses') }}">Internships</a>
+                    <a href="{{ url_for('admin.add_task') }}">Assign Task</a>
+                    <a href="{{ url_for('admin.admin_complete_tasks') }}">Complete Tasks</a>
+                    <a href="{{ url_for('admin.attendance') }}">Attendance</a>
+                    <a href="{{ url_for('admin.admin_performance_overview') }}">Performance</a>
+                    <a href="{{ url_for('admin.admin_leave_requests') }}">Leave Requests</a>
+                    {% elif session.role == 'intern' %}
+                    <a href="{{ url_for('intern.intern_dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('intern.intern_tasks') }}">Tasks</a>
+                    <a href="{{ url_for('intern.intern_attendance') }}">Attendance</a>
+                    <a href="{{ url_for('intern.intern_courses') }}">Internships</a>
+                    <a href="{{ url_for('intern.intern_performance') }}">Performance</a>
+                    <a href="{{ url_for('intern.intern_profile') }}">Profile</a>
+                    {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+
+            <h2>Edit Student</h2>
+
+            <form method="POST" class="card replace-history" enctype="multipart/form-data">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+
+                    <!-- Section: Personal Details -->
+                    <div class="form-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 20px;">
+                        <div
+                            style="width: 150px; height: 150px; border-radius: 50%; overflow: hidden; background-color: #f3f4f6; border: 2px solid #e5e7eb; display: flex; align-items: center; justify-content: center;">
+                            {% if student[11] %}
+                            <img src="{{ url_for('static', filename='uploads/' + student[11]) }}" alt="Profile"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                            <span style="font-size: 40px;">👤</span>
+                            {% endif %}
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <label class="form-label">Profile Picture</label>
+                            <input type="file" name="profile_pic" accept="image/*" class="form-input">
+                            <small style="color: #6b7280;">Upload to change current photo</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="name" value="{{ student[1] }}" required class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" value="{{ student[2] }}" required class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" name="phone_number" value="{{ student[5] if student[5] else '' }}"
+                            class="form-input" placeholder="+91 9876543210">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" name="dob" value="{{ student[7] if student[7] else '' }}" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select name="gender" class="form-input">
+                            <option value="" disabled {{ 'selected' if not student[6] }}>Select Gender</option>
+                            <option value="Male" {{ 'selected' if student[6]=='Male' }}>Male</option>
+                            <option value="Female" {{ 'selected' if student[6]=='Female' }}>Female</option>
+                            <option value="Other" {{ 'selected' if student[6]=='Other' }}>Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Section: Academic Details -->
+                    <div class="form-group">
+                        <label class="form-label">College Name</label>
+                        <select id="collegeSelect" name="college_name" placeholder="Select or type college name..."
+                            required>
+                            <option value="">Select College...</option>
+                            {% if student[3] %}
+                            <option value="{{ student[3] }}" selected>{{ student[3] }}</option>
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <select name="department" required class="form-input">
+                            <option value="">Select Department</option>
+                            <option {{ 'selected' if student[4]=='CSE' }}>CSE</option>
+                            <option {{ 'selected' if student[4]=='IT' }}>IT</option>
+                            <option {{ 'selected' if student[4]=='ECE' }}>ECE</option>
+                            <option {{ 'selected' if student[4]=='EEE' }}>EEE</option>
+                            <option {{ 'selected' if student[4]=='MECH' }}>MECH</option>
+                            <option {{ 'selected' if student[4]=='CIVIL' }}>CIVIL</option>
+                            <option {{ 'selected' if student[4]=='AI & DS' }}>AI & DS</option>
+                            <option {{ 'selected' if student[4]=='Other' }}>Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Assigned Internship</label>
+                        <select name="course_name" class="form-input">
+                            <option value="">Select Internship (Optional)</option>
+                            {% for course in courses %}
+                            <option value="{{ course }}" {{ 'selected' if student[12]==course }}>{{ course }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Internship Type</label>
+                        <select name="internship_type" required class="form-input">
+                            <option value="" {{ 'selected' if not student[13] }}>Select Type</option>
+                            <option {{ 'selected' if student[13]=='Online' }}>Online</option>
+                            <option {{ 'selected' if student[13]=='Offline' }}>Offline</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Joining Date</label>
+                        <input type="date" name="joining_date" value="{{ student[14] if student[14] else '' }}" required
+                            class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ending Date</label>
+                        <input type="date" name="ending_date" value="{{ student[15] if student[15] else '' }}" required
+                            class="form-input">
+                    </div>
+
+                    <!-- Section: Social Links -->
+                    <div class="form-group">
+                        <label class="form-label">LinkedIn URL</label>
+                        <input type="url" name="linkedin_url" value="{{ student[9] if student[9] else '' }}"
+                            class="form-input" placeholder="https://linkedin.com/in/...">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">GitHub URL</label>
+                        <input type="url" name="github_url" value="{{ student[10] if student[10] else '' }}"
+                            class="form-input" placeholder="https://github.com/...">
+                    </div>
+
+                    <!-- Section: Address -->
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" rows="3" class="form-input"
+                            placeholder="Enter full address">{{ student[8] if student[8] else '' }}</textarea>
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 25px; display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary">Update Details</button>
+                    <a href="{{ url_for('admin.student_list') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+
+            <style>
+                .form-group {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                }
+
+                .form-label {
+                    font-weight: 600;
+                    font-size: 14px;
+                    color: #374151;
+                }
+
+                .form-input {
+                    padding: 10px;
+                    border: 1px solid #d1d5db;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    transition: border-color 0.2s;
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+
+                .form-input:focus {
+                    border-color: #2563eb;
+                    outline: none;
+                    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+                }
+
+                /* Tom Select Override */
+                .ts-control {
+                    padding: 10px !important;
+                    border-radius: 8px !important;
+                    border-color: #d1d5db !important;
+                }
+            </style>
+
+
+        </div>
+    </main>
+
+    <!-- Advanced Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a
+                    href="{% if session.role == 'admin' %}{{ url_for('admin.admin_dashboard') }}{% else %}{{ url_for('intern.intern_dashboard') }}{% endif %}">Home</a>
+                <a href="#">About</a>
+                <a href="#">Contact</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+            <p>&copy; 2026 Intern Student Performance Predictor. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Floating Action Buttons -->
+    <div class="fab-container">
+        <a href="#" class="fab fab-scroll-top" id="scrollTopBtn" title="Scroll to Top">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+        </a>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Preloader Logic ---
+            const preloader = document.querySelector('.preloader');
+            if (preloader) {
+                window.addEventListener('load', () => {
+                    preloader.classList.add('fade-out');
+                });
+            }
+
+            // --- Scroll-to-top Button Logic ---
+            const scrollTopBtn = document.getElementById('scrollTopBtn');
+            if (scrollTopBtn) {
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 200) {
+                        scrollTopBtn.classList.add('show');
+                    } else {
+                        scrollTopBtn.classList.remove('show');
+                    }
+                });
+                scrollTopBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+
+            // --- Mobile nav toggle ---
+            const navToggle = document.getElementById('navToggle');
+            const navLinks = document.getElementById('navLinks');
+            if (navToggle && navLinks) {
+                navToggle.addEventListener('click', () => navLinks.classList.toggle('is-open'));
+            }
+        });
+    </script>
+
+    <!-- Tom Select CSS & JS -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script src="{{ url_for('static', filename='js/colleges.js') }}"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const collegeSelect = document.getElementById("collegeSelect");
+
+            // Populate options from colleges.js
+            if (typeof engineeringColleges !== 'undefined') {
+                engineeringColleges.forEach(college => {
+                    // Avoid duplicate of the currently selected one if it's already added manually
+                    if (college !== "{{ student[3] }}") {
+                        const option = document.createElement("option");
+                        option.value = college;
+                        option.textContent = college;
+                        collegeSelect.appendChild(option);
+                    }
+                });
+            }
+
+            // Initialize Tom Select
+            new TomSelect("#collegeSelect", {
+                create: true,
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                },
+                placeholder: "Search for a college...",
+                maxOptions: 50
+            });
+        });
+    </script>
+</body>
+
+</html>
